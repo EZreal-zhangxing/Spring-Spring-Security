@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<beans xmlns="http://www.springframework.org/schema/beans"  
+    xmlns:sec="http://www.springframework.org/schema/security"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
+    xsi:schemaLocation="http://www.springframework.org/schema/beans  
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd  
+        http://www.springframework.org/schema/security  
+        http://www.springframework.org/schema/security/spring-security-3.2.xsd">  
+  
+    <!-- 配置不过滤的资源（静态资源及登录相关） -->  
+    <sec:http pattern="/**/*.css" security="none"></sec:http>  
+    <sec:http pattern="/**/*.jpg" security="none"></sec:http>  
+    <sec:http pattern="/**/*.jpeg" security="none"></sec:http>  
+    <sec:http pattern="/**/*.gif" security="none"></sec:http>  
+    <sec:http pattern="/**/*.png" security="none"></sec:http>  
+    <sec:http pattern="/js/*.js" security="none"></sec:http>  
+      
+    <sec:http pattern="/login.jsp" security="none"></sec:http>  
+    <sec:http pattern="/getCode" security="none" /><!-- 不过滤验证码 -->  
+    <sec:http pattern="/test/**" security="none"></sec:http><!-- 不过滤测试内容 -->  
+      
+    <sec:http auto-config="true">  
+        <!-- 配置资源链接过滤，表示意思为：访问/app.jsp 需要ROLE_SERVICE 权限 -->
+        <sec:intercept-url pattern="/app.jsp" access="ROLE_SERVICE"/>  
+         <!-- 配置资源链接过滤，表示意思为：访问所有资源   需要ROLE_ADMIN 权限 -->
+        <sec:intercept-url pattern="/**" access="ROLE_ADMIN"/>  
+        <!-- 注意，Spring-security采用从上到下过滤，你访问的链接 Spring从上面开始往下找。上面的优先级比下面的优先级高。-->
+        
+        <!-- 
+        	自定义登陆页面，login-page 自定义登陆页面
+        	authentication-failure-url 用户权限校验失败之后才会跳转到这个页面，如果数据库中没有这个用户则不会跳转到这个页面。
+        	default-target-url 登陆成功后跳转的页面。
+        	注：登陆页面用户名固定 name:j_username，密码 name:j_password，action:/j_spring_security_check
+         -->
+        <sec:form-login login-page="/login.jsp" authentication-failure-url="/loginfail.jsp" default-target-url="/index.jsp"/>
+        
+        <!-- 
+        	登出， invalidate-session 是否删除session
+			logout-url：登出处理链接
+			logout-success-url：登出成功页面
+			注：登出操作 只需要链接到 logout即可登出当前用户        	
+        -->
+        <sec:logout invalidate-session="true" logout-url="/logout" logout-success-url="/login.jsp"/>      
+    </sec:http>
+      
+    <!-- 权限管理器，用来查询用户的所有权限使用。登陆用户之后，由这个拦截器来查询用户，分配对应的权限 ，然后分配给sec:http 来做对应的拦截-->  
+    <sec:authentication-manager>  
+    	<!-- 手动定义一个用户以及对应的权限 -->
+        <sec:authentication-provider>  
+            <sec:user-service >  
+                <sec:user name="admin" password="admin" authorities="ROLE_ADMIN"/>  
+            </sec:user-service>  
+        </sec:authentication-provider>
+        <!-- 自己定义 一个类处理用户登陆的时候，用户名，密码，权限获取-->
+        <sec:authentication-provider user-service-ref="Userservices"></sec:authentication-provider>
+        <!-- 直接通过SQL来获取数据库中的用户名，密码，权限-->
+        <sec:authentication-provider>
+        	<sec:jdbc-user-service data-source-ref="Datasource" authorities-by-username-query="select b.username as username,a.ROLE_CODE as authority from ZX_ROLE a left join ZX_USER b on a.USER_ID=b.ID where b.username=?" 
+				users-by-username-query="select username,password,enable as status from ZX_USER where username=?"/>
+        </sec:authentication-provider>
+    </sec:authentication-manager>  
+</beans> 

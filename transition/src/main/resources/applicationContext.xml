@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<beans xmlns="http://www.springframework.org/schema/beans"  
+    xmlns:sec="http://www.springframework.org/schema/security"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
+    xsi:schemaLocation="http://www.springframework.org/schema/beans  
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd  
+        http://www.springframework.org/schema/security  
+        http://www.springframework.org/schema/security/spring-security-3.1.xsd">  
+        
+        <bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+        	<property name="dataSource" ref="Datasource"></property>
+        	<property name="mappingLocations">
+        		<list>
+        			<value>classpath*:/hibernate/*.hbm.xml</value>
+        		</list>
+        	</property>
+        </bean>
+        
+        <bean id="Datasource" class="org.apache.commons.dbcp.BasicDataSource">
+        	<property name="driverClassName" value="com.mysql.jdbc.Driver"></property>
+        	<property name="url" value="jdbc:mysql://172.16.2.4:3306/DY_PMIS"></property>
+        	<property name="username" value="root"></property>
+        	<property name="password" value="pmo2009"></property>
+        </bean>
+        <!-- 
+        	这个类为用户登陆 处理类，需要实现UserDetailsService接口  
+        	重写 loadUserByUsername 方法，并且注意  此方法的返回值为UserDetails类型
+        	而UserDetails 是一个接口，所以应该返回他的实现类 org.springframework.security.core.userdetails.User
+        	注意org.springframework.security.core.userdetails.User的参数 有七个
+        	username,用户登陆名
+        	password,密码
+        	enabled,是否可用
+        	accountNonExpired,set to true if the account has not expired
+			credentialsNonExpired, set to true if the credentials have not expired
+			accountNonLocked, set to true if the account is not locked
+			authorities,是用户的权限集合 泛型为<?  extends GrantedAuthority> collection
+			所以这个值需要我们定义一个泛型为GrantedAuthority(这是一个接口 ，他的实现类为GrantedAuthorityImpl)集合
+			我们查询出对应的用户角色后 遍历 并且实例化GrantedAuthorityImpl 设置对应的角色代码 放入集合
+			最后返回org.springframework.security.core.userdetails.User即可
+        -->
+    	<bean id="Userservices" class="services.userserviceDaoImp">
+    		<property name="udi" ref="userdaoimp"></property>
+    	</bean>
+    	<bean id="userdaoimp" class="Dao.userDaoimp">
+    		<property name="sessionFactory" ref="sessionFactory"></property>
+    	</bean>
+</beans>
